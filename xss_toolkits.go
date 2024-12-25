@@ -12,8 +12,7 @@ import (
 
 // PrintHelp displays help information for the tool
 func PrintHelp() {
-	fmt.Println(`XSS Automation Tool by Moazam Hameed
-	- Usage:
+	fmt.Println(`XSS Automation Tool - Usage:
   -urls <file>       Specify a file containing target URLs.
   -payloads <file>   Specify a file containing XSS payloads.
   -help              Display this help message.
