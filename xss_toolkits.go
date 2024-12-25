@@ -4,11 +4,16 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 )
+
+// ANSI escape codes for colored output
+const RedText = "\033[31m"
+const ResetText = "\033[0m"
 
 // PrintHelp displays help information for the tool
 func PrintHelp() {
@@ -41,7 +46,7 @@ func ReadLines(filename string) ([]string, error) {
 	return lines, nil
 }
 
-// TestXSS tests a URL with a given payload
+// TestXSS tests a URL with a given payload and checks for successful reflections
 func TestXSS(targetURL string, payload string) {
 	// Inject payload
 	fullURL := targetURL + url.QueryEscape(payload)
@@ -55,11 +60,34 @@ func TestXSS(targetURL string, payload string) {
 	}
 	defer resp.Body.Close()
 
-	// Check response status
-	if resp.StatusCode == http.StatusOK {
-		fmt.Printf("[+] Response received. Check for XSS payload reflections.\n")
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("[-] Error reading response body: %v\n", err)
+		return
+	}
+
+	// Check if the payload is reflected in the response body
+	if strings.Contains(string(body), payload) {
+		fmt.Printf("%s[+] Potential XSS found: %s%s\n", RedText, fullURL, ResetText)
+		// Optionally, write to a file for logging
+		logToFile("xss_successful.txt", fullURL)
 	} else {
-		fmt.Printf("[-] Received non-OK response: %d\n", resp.StatusCode)
+		fmt.Printf("[-] Payload not reflected: %s\n", fullURL)
+	}
+}
+
+// logToFile logs the successful URLs to a file
+func logToFile(filename string, data string) {
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf("[-] Error writing to file: %v\n", err)
+		return
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(data + "\n"); err != nil {
+		fmt.Printf("[-] Error writing to file: %v\n", err)
 	}
 }
 
