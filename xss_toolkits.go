@@ -29,7 +29,7 @@ Usage:
   -help              Display this help message.
 
 Example:
-  go run xss_tool.go -urls urls.txt -payloads payloads.txt
+  xss_toolkit -urls urls.txt -payloads payloads.txt
 `)
 }
 
