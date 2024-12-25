@@ -55,7 +55,7 @@ func ReadLines(filename string) ([]string, error) {
 
 // TestXSS tests a URL with a given payload
 func TestXSS(targetURL string, payload string) {
-	// Construct the full URL by injecting the payload
+	// Construct the full URL with the payload
 	fullURL := targetURL + url.QueryEscape(payload)
 	fmt.Printf("[*] Testing URL: %s\n", fullURL)
 
@@ -66,6 +66,12 @@ func TestXSS(targetURL string, payload string) {
 		return
 	}
 	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("[-] Received non-OK response: %d\n", resp.StatusCode)
+		return
+	}
 
 	// Read response body
 	body := make([]byte, resp.ContentLength)
@@ -116,6 +122,7 @@ func main() {
 	// Test each URL with each payload
 	for _, url := range urls {
 		for _, payload := range payloads {
+			// Trim spaces and test the URL with the payload
 			TestXSS(strings.TrimSpace(url), strings.TrimSpace(payload))
 		}
 	}
