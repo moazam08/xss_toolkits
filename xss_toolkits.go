@@ -8,29 +8,17 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"regexp"
-)
-
-// Color definitions for terminal output
-const (
-	RED    = "\033[0;31m"
-	GREEN  = "\033[0;32m"
-	NC     = "\033[0m" // No color
 )
 
 // PrintHelp displays help information for the tool
 func PrintHelp() {
-	fmt.Println(`XSS Automation Tool
-Created by Moazam Hameed
-
-Usage:
+	fmt.Println(`XSS Automation Tool - Usage:
   -urls <file>       Specify a file containing target URLs.
   -payloads <file>   Specify a file containing XSS payloads.
   -help              Display this help message.
 
 Example:
-  xss_toolkit -urls urls.txt -payloads payloads.txt
-`)
+  go run xss_tool.go -urls urls.txt -payloads payloads.txt`)
 }
 
 // ReadLines reads lines from a file and returns them as a slice of strings
@@ -67,17 +55,11 @@ func TestXSS(targetURL string, payload string) {
 	}
 	defer resp.Body.Close()
 
-	// Check if the payload is reflected in the response body
-	body := make([]byte, resp.ContentLength)
-	resp.Body.Read(body)
-	bodyStr := string(body)
-
-	// Look for the payload in the response body using a simple regex match
-	re := regexp.MustCompile(regexp.QuoteMeta(payload))
-	if re.MatchString(bodyStr) {
-		fmt.Printf("%s[REFLECTED XSS FOUND]%s Potential XSS vulnerability in parameter: %s\n", RED, NC, payload)
+	// Check response status
+	if resp.StatusCode == http.StatusOK {
+		fmt.Printf("[+] Response received. Check for XSS payload reflections.\n")
 	} else {
-		fmt.Printf("%s[SAFE]%s No XSS found for parameter: %s\n", GREEN, NC, payload)
+		fmt.Printf("[-] Received non-OK response: %d\n", resp.StatusCode)
 	}
 }
 
