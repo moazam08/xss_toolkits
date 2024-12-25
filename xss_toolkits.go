@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -55,8 +56,15 @@ func ReadLines(filename string) ([]string, error) {
 
 // TestXSS tests a URL with a given payload
 func TestXSS(targetURL string, payload string) {
+	// Check if the payload is already URL-encoded
+	// If not, encode it before appending
+	encodedPayload := payload
+	if !strings.Contains(payload, "%") { // If the payload is not URL-encoded
+		encodedPayload = url.QueryEscape(payload)
+	}
+
 	// Construct the full URL with the payload
-	fullURL := targetURL + url.QueryEscape(payload)
+	fullURL := targetURL + encodedPayload
 	fmt.Printf("[*] Testing URL: %s\n", fullURL)
 
 	// Send HTTP GET request
@@ -67,23 +75,16 @@ func TestXSS(targetURL string, payload string) {
 	}
 	defer resp.Body.Close()
 
-	// Check response status
-	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("[-] Received non-OK response: %d\n", resp.StatusCode)
-		return
-	}
-
-	// Read response body
-	body := make([]byte, resp.ContentLength)
-	_, err = resp.Body.Read(body)
-	if err != nil && err.Error() != "EOF" {
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
 		fmt.Printf("[-] Error reading response body for %s: %v\n", fullURL, err)
 		return
 	}
 	bodyStr := string(body)
 
 	// Look for the payload in the response body using a regex match
-	re := regexp.MustCompile(regexp.QuoteMeta(payload))
+	re := regexp.MustCompile(regexp.QuoteMeta(encodedPayload))
 	if re.MatchString(bodyStr) {
 		fmt.Printf("%s[REFLECTED XSS FOUND]%s Potential XSS vulnerability in parameter: %s\n", RED, NC, payload)
 	} else {
