@@ -75,7 +75,7 @@ func TestXSS(targetURL string, payload string) {
 	}
 	defer resp.Body.Close()
 
-	// Read the response body
+	// Read the response body dynamically
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("[-] Error reading response body for %s: %v\n", fullURL, err)
